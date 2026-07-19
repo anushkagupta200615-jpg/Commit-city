@@ -1,3 +1,8 @@
 node_modules
 .next
 .vercel
+
+# local secrets — never commit these
+.env
+.env.local
+.env*.local

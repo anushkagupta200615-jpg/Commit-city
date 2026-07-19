@@ -29,9 +29,16 @@ It's a contribution visualizer with a soul: part data-viz, part illustration, pa
 - **Growth chart** — contributions per year across your whole GitHub life
 - **AI City Inspector's report** — an optional Claude-written noir walking tour of your skyline
 
+### 🌍 Your open-source footprint
+- **In the wild** — your contributions *outside* your own repos: PRs merged elsewhere, **PR acceptance rate**, PRs you've reviewed, issues filed, and the total stars of repos you've improved
+- **Contribution DNA** — what you build at home vs. where your merged PRs actually land, compared side by side ("your city is 80% JavaScript, but in the wild you write Lean")
+- **📜 City permits (license intelligence)** — license breakdown across your repos, with a clear warning for unlicensed ones (no license = legally *not* open source) and the 30-second fix
+- **🏘️ Are you a good host?** — newcomer-friendliness audit of your top repos via GitHub's community health data: README, LICENSE, CONTRIBUTING, code of conduct, issue templates, and open `good first issue` labels
+
 ### 🚀 Break into open source
 - **Program matching** — matches your tech stack to **live GSoC organizations** (from Google's API), plus curated **LFX Mentorship** and **Outreachy** rosters, with competition signals (🔥 competitive vs 🌱 friendlier odds)
-- **Real starter issues** — surfaces open, unassigned `good first issue`s in your top languages, with direct repo + issue links you can try tonight
+- **Real starter issues** — open, unassigned `good first issue`s in your top languages, preferring low-competition issues (few comments, recently filed)
+- **Neighborhoods hiring first-timers** — actively-maintained repos in your languages *and topics* that explicitly label good-first-issues
 - **🌉 Bridges to target orgs** — watchlist the orgs you're aiming for; every merged PR you land there adds a girder to an illustrated bridge (mentors pick applicants who contributed early — this gamifies exactly that)
 - **🎯 Application readiness score** — a 0–100 score across the signals mentors actually check (merged external PRs, recent activity, consistency, profile completeness), each with concrete advice
 
@@ -196,6 +203,8 @@ app/
     ├── mentorship/[username]/  # GSoC / LFX / Outreachy + issue matching
     ├── bridges/[username]/     # PRs merged into target orgs
     ├── readiness/[username]/   # Application readiness score
+    ├── wild/[username]/        # External footprint + contribution DNA
+    ├── host/[username]/        # Maintainer health of top repos
     └── coach/                  # AI proposal outline & review
 
 components/
@@ -206,6 +215,7 @@ lib/
 ├── city.js                     # City model + analysis
 ├── citygen.js                  # Deterministic skyline generation
 ├── mentorshipData.js           # Program calendars, comparison, plan + .ics
+├── wild.js                     # External contribution profile (DNA)
 ├── skylineSvg.js               # Server-side SVG renderer (embeds/OG)
 └── programs.js                 # GSoC/LFX + starter-issue matching
 

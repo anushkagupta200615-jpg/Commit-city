@@ -1073,6 +1073,118 @@ body {
   line-height: 1.4;
 }
 
+/* licenses */
+.license-warning {
+  margin-top: 16px;
+  background: rgba(255, 156, 107, 0.08);
+  border: 1px solid rgba(255, 156, 107, 0.3);
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* in the wild */
+.wild-stats {
+  margin-bottom: 8px;
+}
+
+.dna-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px 32px;
+}
+
+.dna-label {
+  display: block;
+  font-weight: 800;
+  font-size: 0.88rem;
+  margin-bottom: 10px;
+  color: var(--text-soft);
+}
+
+.dna-row {
+  margin-bottom: 10px;
+}
+
+.wild-repos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wild-repo-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(8, 13, 32, 0.6);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.85rem;
+  transition: border-color 0.2s;
+}
+
+.wild-repo-chip:hover {
+  border-color: var(--gold);
+}
+
+.wild-repo-chip span {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+}
+
+/* good host */
+.host-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.host-card {
+  background: rgba(8, 13, 32, 0.6);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.host-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.host-head a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.host-head a:hover strong {
+  color: var(--gold);
+}
+
+.host-health {
+  font-weight: 800;
+  color: var(--blue);
+}
+
+.host-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.86rem;
+}
+
+.host-checks .missing {
+  color: var(--text-soft);
+}
+
 /* mentorship HQ page */
 .hq-page {
   min-height: 100vh;

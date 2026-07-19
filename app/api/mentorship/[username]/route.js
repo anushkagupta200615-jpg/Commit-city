@@ -1,6 +1,10 @@
 import { fetchGitHubData } from "../../../../lib/github";
 import { buildCityModel } from "../../../../lib/city";
-import { matchPrograms, findStarterIssues } from "../../../../lib/programs";
+import {
+  matchPrograms,
+  findStarterIssues,
+  findSuggestedRepos,
+} from "../../../../lib/programs";
 
 // Mentorship matchmaking: GSoC / LFX orgs that fit the user's language
 // districts, plus real good-first-issues they can try right now.
@@ -21,9 +25,10 @@ export async function GET(request, { params }) {
     const city = buildCityModel(data);
     const languages = city.analysis.districts.map((d) => d.name);
 
-    const [programs, issues] = await Promise.all([
+    const [programs, issues, suggestedRepos] = await Promise.all([
       matchPrograms(languages),
       findStarterIssues(languages),
+      findSuggestedRepos(languages, city.analysis.topTopics),
     ]);
 
     return Response.json({
@@ -31,6 +36,7 @@ export async function GET(request, { params }) {
       orgs: programs.orgs,
       liveGsoc: programs.liveGsoc,
       issues,
+      suggestedRepos,
     });
   } catch (err) {
     if (err.message === "rate_limited") {

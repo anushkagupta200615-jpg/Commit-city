@@ -25,6 +25,8 @@ export default function CityPage() {
   const [bridges, setBridges] = useState({ status: "idle", data: [] });
   const [orgInput, setOrgInput] = useState("");
   const [readiness, setReadiness] = useState({ status: "loading" });
+  const [wild, setWild] = useState({ status: "idle" });
+  const [host, setHost] = useState({ status: "idle" });
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -90,6 +92,30 @@ export default function CityPage() {
       alive = false;
     };
   }, [state.status, username]);
+
+  // External footprint + maintainer health are the most API-heavy panels,
+  // so they load on demand (a click) rather than on every page view.
+  async function loadWild() {
+    setWild({ status: "loading" });
+    try {
+      const res = await fetch(`/api/wild/${encodeURIComponent(username)}`);
+      const json = await res.json();
+      setWild(res.ok ? { status: "ready", data: json } : { status: "error", reason: json.error });
+    } catch {
+      setWild({ status: "error" });
+    }
+  }
+
+  async function loadHost() {
+    setHost({ status: "loading" });
+    try {
+      const res = await fetch(`/api/host/${encodeURIComponent(username)}`);
+      const json = await res.json();
+      setHost(res.ok ? { status: "ready", data: json } : { status: "error", reason: json.error });
+    } catch {
+      setHost({ status: "error" });
+    }
+  }
 
   // Target-org watchlist lives in localStorage, bridges load from it.
   useEffect(() => {
@@ -440,6 +466,226 @@ export default function CityPage() {
           </div>
         )}
 
+        {city.towerCount > 0 && (
+          <div className="panel">
+            <h3>📜 City permits</h3>
+            <p className="sub">
+              Licenses across your towers — a repo without a license is legally
+              &quot;all rights reserved,&quot; which means it is <em>not</em>{" "}
+              open source and nobody can safely reuse it.
+            </p>
+            {a.licenses.breakdown.length > 0 && (
+              <div className="district-list">
+                {a.licenses.breakdown.map((l) => (
+                  <div className="district" key={l.name}>
+                    <div className="district-head">
+                      <span>{l.name}</span>
+                      <span>
+                        {l.count} {l.count === 1 ? "tower" : "towers"}
+                      </span>
+                    </div>
+                    <div className="bar">
+                      <div
+                        style={{
+                          width: `${Math.round((l.count / city.towerCount) * 100)}%`,
+                          background: "#7ee0a3",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {a.licenses.unlicensed > 0 ? (
+              <div className="license-warning">
+                ⚠️ <strong>{a.licenses.unlicensed}</strong> tower
+                {a.licenses.unlicensed === 1 ? " has" : "s have"} no permit —{" "}
+                {a.licenses.unlicensedSample.join(", ")}
+                {a.licenses.unlicensed > a.licenses.unlicensedSample.length
+                  ? "…"
+                  : ""}
+                . Fix it in 30 seconds: on GitHub, <em>Add file → Create new
+                file → type &quot;LICENSE&quot;</em> and pick a template (MIT is
+                the friendly default).
+              </div>
+            ) : (
+              a.licenses.breakdown.length > 0 && (
+                <p className="mentorship-note">
+                  ✅ Every tower has a permit — all your public projects are
+                  properly licensed.
+                </p>
+              )
+            )}
+          </div>
+        )}
+
+        <div className="panel">
+          <h3>🌍 In the wild</h3>
+          <p className="sub">
+            Your open-source footprint <em>outside</em> your own city — the part
+            mentors and employers weigh most.
+          </p>
+          {wild.status === "idle" && (
+            <button className="report-btn" onClick={loadWild}>
+              🌍 map my footprint
+            </button>
+          )}
+          {wild.status === "loading" && (
+            <p className="report-loading">Tracking your footprints across the river…</p>
+          )}
+          {wild.status === "error" && (
+            <p className="report-loading">
+              {wild.reason === "rate_limited"
+                ? "GitHub is rate-limiting the survey — try again in a minute."
+                : "Couldn't map your external contributions just now."}
+            </p>
+          )}
+          {wild.status === "ready" && (
+            <>
+              <div className="stats-row wild-stats">
+                <div className="stat">
+                  <div className="num">{wild.data.merged.toLocaleString()}</div>
+                  <div className="label">PRs merged elsewhere</div>
+                </div>
+                <div className="stat">
+                  <div className="num">
+                    {wild.data.acceptancePct == null ? "—" : `${wild.data.acceptancePct}%`}
+                  </div>
+                  <div className="label">PR acceptance rate</div>
+                </div>
+                <div className="stat">
+                  <div className="num">{wild.data.reviewed.toLocaleString()}</div>
+                  <div className="label">PRs you reviewed</div>
+                </div>
+                <div className="stat">
+                  <div className="num">{wild.data.starsReached.toLocaleString()}</div>
+                  <div className="label">stars on repos you improved</div>
+                </div>
+              </div>
+
+              {wild.data.wildLanguages.length > 0 && (
+                <>
+                  <h4 className="issues-title">Contribution DNA</h4>
+                  <p className="sub">
+                    What you build at home vs where your merged PRs actually land.
+                  </p>
+                  <div className="dna-compare">
+                    <div>
+                      <span className="dna-label">🏠 your city</span>
+                      {a.districts.slice(0, 4).map((d) => (
+                        <DnaBar key={d.name} name={d.name} pct={d.pct} color={d.color} />
+                      ))}
+                    </div>
+                    <div>
+                      <span className="dna-label">🌍 in the wild</span>
+                      {wild.data.wildLanguages.slice(0, 4).map((l, i) => (
+                        <DnaBar
+                          key={l.name}
+                          name={l.name}
+                          pct={l.pct}
+                          color={["#4da3ff", "#ff7ad9", "#7ee0a3", "#b17aff"][i % 4]}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {wild.data.topRepos.length > 0 && (
+                <>
+                  <h4 className="issues-title">Where your girders landed</h4>
+                  <div className="wild-repos">
+                    {wild.data.topRepos.slice(0, 6).map((r) => (
+                      <a
+                        key={r.name}
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="wild-repo-chip"
+                      >
+                        <strong>{r.name}</strong>
+                        <span>
+                          {r.prs} PR{r.prs === 1 ? "" : "s"} · ★{" "}
+                          {r.stars.toLocaleString()}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </>
+              )}
+              {wild.data.sampleNote && (
+                <p className="mentorship-note">{wild.data.sampleNote}</p>
+              )}
+            </>
+          )}
+        </div>
+
+        {city.towerCount > 0 && (
+          <div className="panel">
+            <h3>🏘️ Are you a good host?</h3>
+            <p className="sub">
+              Newcomer-friendliness of your top towers — the files that tell a
+              first-time contributor they&apos;re welcome.
+            </p>
+            {host.status === "idle" && (
+              <button className="report-btn" onClick={loadHost}>
+                🏘️ inspect my towers
+              </button>
+            )}
+            {host.status === "loading" && (
+              <p className="report-loading">Knocking on doors…</p>
+            )}
+            {host.status === "error" && (
+              <p className="report-loading">
+                {host.reason === "rate_limited"
+                  ? "GitHub is rate-limiting the inspection — try again in a minute."
+                  : "Couldn't inspect the towers just now."}
+              </p>
+            )}
+            {host.status === "ready" && host.data.repos.length === 0 && (
+              <p className="report-loading">
+                No standalone project towers to inspect yet.
+              </p>
+            )}
+            {host.status === "ready" && host.data.repos.length > 0 && (
+              <>
+            <div className="host-grid">
+              {host.data.repos.map((r) => (
+                <div className="host-card" key={r.name}>
+                  <div className="host-head">
+                    <a href={r.url} target="_blank" rel="noreferrer">
+                      <strong>{r.name}</strong>
+                    </a>
+                    <span className="host-health">{r.health}%</span>
+                  </div>
+                  <ul className="host-checks">
+                    <HostCheck ok={r.files.readme} label="README" />
+                    <HostCheck ok={r.files.license} label="LICENSE" />
+                    <HostCheck ok={r.files.contributing} label="CONTRIBUTING.md" />
+                    <HostCheck ok={r.files.codeOfConduct} label="Code of Conduct" />
+                    <HostCheck ok={r.files.issueTemplate} label="Issue template" />
+                    <HostCheck
+                      ok={r.goodFirstIssues > 0}
+                      label={
+                        r.goodFirstIssues > 0
+                          ? `${r.goodFirstIssues} good-first-issue${r.goodFirstIssues === 1 ? "" : "s"} open`
+                          : "No good-first-issues labeled"
+                      }
+                    />
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <p className="mentorship-note">
+              Missing files are one-click adds on GitHub (Insights → Community
+              Standards). Labeling a few easy issues &quot;good first issue&quot;
+              is how your city welcomes its own newcomers.
+            </p>
+              </>
+            )}
+          </div>
+        )}
+
         {a.years.length > 1 && (
           <div className="panel">
             <h3>City growth</h3>
@@ -579,6 +825,48 @@ export default function CityPage() {
                       </li>
                     ))}
                   </ul>
+                </>
+              )}
+              {mentorship.data.suggestedRepos?.length > 0 && (
+                <>
+                  <h4 className="issues-title">
+                    Neighborhoods hiring first-timers
+                  </h4>
+                  <p className="sub">
+                    Actively maintained repos in your languages and topics with
+                    open good-first-issues.
+                  </p>
+                  <div className="org-grid">
+                    {mentorship.data.suggestedRepos.map((r) => (
+                      <div className="org-card" key={r.name}>
+                        <div className="org-head">
+                          <strong>{r.name}</strong>
+                          <span className="landmark-meta">
+                            ★ {r.stars.toLocaleString()}
+                            {r.language ? ` · ${r.language}` : ""}
+                          </span>
+                        </div>
+                        {r.topics.length > 0 && (
+                          <div className="org-tech">
+                            {r.topics.map((t) => (
+                              <span key={t} className="tech-chip">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {r.description && <p>{r.description}</p>}
+                        <div className="org-links">
+                          <a href={r.url} target="_blank" rel="noreferrer">
+                            repo ↗
+                          </a>
+                          <a href={r.gfiUrl} target="_blank" rel="noreferrer">
+                            starter issues ↗
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
               <p className="mentorship-note">
@@ -892,6 +1180,28 @@ function BridgeGraphic({ merged, open }) {
         </text>
       )}
     </svg>
+  );
+}
+
+function DnaBar({ name, pct, color }) {
+  return (
+    <div className="district dna-row">
+      <div className="district-head">
+        <span>{name}</span>
+        <span>{pct}%</span>
+      </div>
+      <div className="bar">
+        <div style={{ width: `${pct}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+function HostCheck({ ok, label }) {
+  return (
+    <li className={ok ? "ok" : "missing"}>
+      {ok ? "✅" : "◻"} {label}
+    </li>
   );
 }
 
