@@ -1073,6 +1073,58 @@ body {
   line-height: 1.4;
 }
 
+/* program directory */
+.dir-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dir-tabs {
+  margin-bottom: 0;
+}
+
+.dir-count {
+  opacity: 0.65;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.dir-search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.dir-chips {
+  margin-bottom: 14px;
+}
+
+.tech-chip.active-chip {
+  background: var(--gold);
+  color: #1c1503;
+}
+
+.dir-grid {
+  margin-top: 14px;
+}
+
+.dir-more {
+  display: block;
+  margin: 18px auto 0;
+}
+
+.hq-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+}
+
+.hq-head .hq-link {
+  margin-top: 12px;
+}
+
 /* bulletin — since you last visited */
 .bulletin-panel {
   border-color: rgba(246, 196, 83, 0.4);

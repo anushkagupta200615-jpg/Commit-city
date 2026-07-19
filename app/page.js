@@ -98,6 +98,9 @@ export default function Landing() {
           <Link href="/prepare" className="example-chip">
             🧭 Mentorship HQ — GSoC · LFX · Outreachy
           </Link>
+          <Link href="/programs" className="example-chip">
+            📚 program directory
+          </Link>
           <Link href="/squad" className="example-chip">
             🌉 squad street
           </Link>

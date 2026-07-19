@@ -44,6 +44,9 @@ export default function PreparePage() {
           Everything a student needs to land GSoC, LFX Mentorship, or Outreachy
           — deadlines, eligibility, a plan, and a proposal coach.
         </p>
+        <Link href="/programs" className="hq-link">
+          📚 browse the full directory — every GSoC org, plus LFX & Outreachy →
+        </Link>
       </div>
 
       <div className="city-content">

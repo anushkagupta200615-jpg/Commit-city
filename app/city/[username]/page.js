@@ -1024,9 +1024,14 @@ export default function CityPage() {
               </p>
             </>
           )}
-          <Link href="/prepare" className="hq-link">
-            🧭 Mentorship HQ — deadlines, eligibility quiz, stipends & proposal coach →
-          </Link>
+          <div className="hq-link-row">
+            <Link href="/prepare" className="hq-link">
+              🧭 Mentorship HQ — deadlines, quiz & proposal coach →
+            </Link>
+            <Link href="/programs" className="hq-link">
+              📚 full program directory →
+            </Link>
+          </div>
         </div>
 
         <div className="panel">

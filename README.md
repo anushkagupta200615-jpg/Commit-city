@@ -39,6 +39,7 @@ It's a contribution visualizer with a soul: part data-viz, part illustration, pa
 - **Program matching** — matches your tech stack to **live GSoC organizations** (from Google's API), plus curated **LFX Mentorship** and **Outreachy** rosters, with competition signals (🔥 competitive vs 🌱 friendlier odds)
 - **Real starter issues** — open, unassigned `good first issue`s in your top languages, preferring low-competition issues (few comments, recently filed)
 - **Neighborhoods hiring first-timers** — actively-maintained repos in your languages *and topics* that explicitly label good-first-issues
+- **📚 Program directory (`/programs`)** — every live GSoC organization for the current year (from Google's API) plus curated LFX and Outreachy community rosters, searchable and filterable by language
 - **🌉 Bridges to target orgs** — watchlist the orgs you're aiming for; every merged PR you land there adds a girder to an illustrated bridge (mentors pick applicants who contributed early — this gamifies exactly that)
 - **🎯 Application readiness score** — a 0–100 score across the signals mentors actually check (merged external PRs, recent activity, consistency, profile completeness), each with concrete advice
 
