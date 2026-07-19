@@ -878,6 +878,15 @@ export default function CityPage() {
                         {o.program}
                       </span>
                       <strong>{o.name}</strong>
+                      {o.level && (
+                        <span className={`level-chip small lvl-${o.level}`}>
+                          {o.level === "beginner"
+                            ? "🌱 beginner-friendly"
+                            : o.level === "tough"
+                              ? "🧗 tough"
+                              : "⚒️ intermediate"}
+                        </span>
+                      )}
                       {o.competition && (
                         <span className={`competition-chip ${o.competition}`}>
                           {o.competition === "high"

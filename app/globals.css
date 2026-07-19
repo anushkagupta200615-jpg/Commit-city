@@ -1106,6 +1106,46 @@ body {
   color: #1c1503;
 }
 
+/* difficulty levels */
+.level-chip {
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  background: rgba(148, 173, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.level-chip.small {
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  cursor: default;
+}
+
+.level-chip.lvl-beginner {
+  color: #7ee0a3;
+}
+
+.level-chip.lvl-intermediate {
+  color: var(--gold);
+}
+
+.level-chip.lvl-tough {
+  color: #ff9c6b;
+}
+
+button.level-chip:hover {
+  border-color: currentColor;
+}
+
+.level-chip.active-level {
+  background: rgba(126, 224, 163, 0.12);
+  border-color: currentColor;
+}
+
 .dir-grid {
   margin-top: 14px;
 }

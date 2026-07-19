@@ -16,18 +16,29 @@ const TABS = [
 
 const INITIAL_SHOWN = 48;
 
+const LEVELS = [
+  { id: "beginner", label: "🌱 beginner-friendly", cls: "lvl-beginner" },
+  { id: "intermediate", label: "⚒️ intermediate", cls: "lvl-intermediate" },
+  { id: "tough", label: "🧗 tough", cls: "lvl-tough" },
+];
+
+const LEVEL_META = Object.fromEntries(LEVELS.map((l) => [l.id, l]));
+
 export default function ProgramsPage() {
   const [state, setState] = useState({ status: "loading" });
   const [tab, setTab] = useState("all");
   const [query, setQuery] = useState("");
   const [tech, setTech] = useState(null);
+  const [level, setLevel] = useState(null);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch("/api/programs");
+        // no-cache = revalidate with the server (304 when unchanged),
+        // so directory updates show up without waiting out max-age.
+        const res = await fetch("/api/programs", { cache: "no-cache" });
         const json = await res.json();
         if (alive)
           setState(res.ok ? { status: "ready", data: json } : { status: "error" });
@@ -64,9 +75,16 @@ export default function ProgramsPage() {
       .map(([name, count]) => ({ name, count }));
   }, [orgs]);
 
+  const levelCounts = useMemo(() => {
+    const counts = { beginner: 0, intermediate: 0, tough: 0 };
+    for (const o of orgs) if (counts[o.level] != null) counts[o.level]++;
+    return counts;
+  }, [orgs]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return orgs.filter((o) => {
+      if (level && o.level !== level) return false;
       if (tech && !(o.tech || []).some((t) => String(t).toLowerCase() === tech))
         return false;
       if (!q) return true;
@@ -76,7 +94,7 @@ export default function ProgramsPage() {
         (o.tech || []).some((t) => String(t).toLowerCase().includes(q))
       );
     });
-  }, [orgs, query, tech]);
+  }, [orgs, query, tech, level]);
 
   const shown = showAll ? filtered : filtered.slice(0, INITIAL_SHOWN);
 
@@ -148,6 +166,21 @@ export default function ProgramsPage() {
               </div>
 
               <div className="quick-add dir-chips">
+                {LEVELS.map((l) => (
+                  <button
+                    key={l.id}
+                    className={`level-chip ${l.cls}${level === l.id ? " active-level" : ""}`}
+                    onClick={() => {
+                      setLevel(level === l.id ? null : l.id);
+                      setShowAll(false);
+                    }}
+                  >
+                    {l.label} · {levelCounts[l.id]}
+                  </button>
+                ))}
+              </div>
+
+              <div className="quick-add dir-chips">
                 {techChips.map((t) => (
                   <button
                     key={t.name}
@@ -192,9 +225,15 @@ export default function ProgramsPage() {
             <div className="panel">
               <h3>
                 {filtered.length} organization{filtered.length === 1 ? "" : "s"}
+                {level ? ` · ${LEVEL_META[level].label}` : ""}
                 {tech ? ` · ${tech}` : ""}
                 {query ? ` · “${query}”` : ""}
               </h3>
+              <p className="sub">
+                Levels are our estimate of the entry bar (stack + domain), not an
+                official rating — plenty of &quot;tough&quot; orgs have gentle
+                first issues.
+              </p>
               {filtered.length === 0 ? (
                 <p className="report-loading">
                   Nothing matches — try clearing the search or the tech filter.
@@ -209,6 +248,11 @@ export default function ProgramsPage() {
                             {o.program}
                           </span>
                           <strong>{o.name}</strong>
+                          {o.level && LEVEL_META[o.level] && (
+                            <span className={`level-chip small ${LEVEL_META[o.level].cls}`}>
+                              {LEVEL_META[o.level].label}
+                            </span>
+                          )}
                         </div>
                         {(o.tech || []).length > 0 && (
                           <div className="org-tech">
