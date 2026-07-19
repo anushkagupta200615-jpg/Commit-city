@@ -1,0 +1,17 @@
+{
+  "name": "Commit City",
+  "short_name": "Commit City",
+  "description": "Your GitHub as the New York skyline at night.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#04081a",
+  "theme_color": "#04081a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
