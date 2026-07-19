@@ -1541,12 +1541,76 @@ body {
   align-self: flex-start;
 }
 
-.coach-result {
+.coach-result-wrap {
+  position: relative;
   margin-top: 16px;
+}
+
+.copy-mini {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 1;
+  border: 1px solid var(--panel-border);
+  background: rgba(14, 22, 48, 0.9);
+  color: var(--text-soft);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.78rem;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.copy-mini:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.coach-result {
   background: rgba(8, 13, 32, 0.6);
   border: 1px solid var(--panel-border);
   border-radius: 14px;
   padding: 16px 20px;
+}
+
+.rich-h {
+  color: var(--gold);
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 18px 0 8px;
+}
+
+.coach-result .rich-h:first-child {
+  margin-top: 4px;
+}
+
+.rich-list {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  line-height: 1.6;
+}
+
+.rich-list li::marker {
+  color: var(--blue);
+}
+
+.coach-result strong {
+  color: var(--text);
+}
+
+.coach-wide-input {
+  border: 1px solid var(--panel-border);
+  background: rgba(8, 13, 32, 0.6);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
 }
 
 /* squad */

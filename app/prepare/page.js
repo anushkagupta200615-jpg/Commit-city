@@ -332,13 +332,23 @@ function EligibilityQuiz() {
 
 // ---------- proposal coach ----------
 
+const COACH_MODES = [
+  { id: "ideas", tab: "💡 give me ideas", btn: "💡 suggest project ideas", loading: "the coach is brainstorming…" },
+  { id: "outline", tab: "✍️ outline from an idea", btn: "✍️ outline my proposal", loading: "the coach is writing…" },
+  { id: "review", tab: "🔍 review my draft", btn: "🔍 review my draft", loading: "the coach is reading…" },
+];
+
 function ProposalCoach() {
-  const [mode, setMode] = useState("outline");
+  const [mode, setMode] = useState("ideas");
   const [program, setProgram] = useState("GSoC");
   const [org, setOrg] = useState("");
+  const [skills, setSkills] = useState("");
   const [idea, setIdea] = useState("");
   const [draft, setDraft] = useState("");
   const [result, setResult] = useState({ status: "idle" });
+  const [copied, setCopied] = useState(false);
+
+  const current = COACH_MODES.find((m) => m.id === mode);
 
   async function run() {
     setResult({ status: "loading" });
@@ -346,7 +356,7 @@ function ProposalCoach() {
       const res = await fetch("/api/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, program, org, idea, draft }),
+        body: JSON.stringify({ mode, program, org, skills, idea, draft }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -359,27 +369,32 @@ function ProposalCoach() {
     }
   }
 
+  async function copyResult() {
+    try {
+      await navigator.clipboard.writeText(result.text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
+  }
+
   return (
     <div className="panel">
       <h3>🎓 Proposal coach</h3>
       <p className="sub">
-        Get a tailored proposal outline from a project idea, or an org-mentor
-        style review of your draft.
+        Not sure what to propose? Start with ideas. Have one? Get an outline.
+        Wrote a draft? Get an org-mentor style review.
       </p>
 
       <div className="coach-tabs">
-        <button
-          className={mode === "outline" ? "active" : ""}
-          onClick={() => setMode("outline")}
-        >
-          outline from an idea
-        </button>
-        <button
-          className={mode === "review" ? "active" : ""}
-          onClick={() => setMode("review")}
-        >
-          review my draft
-        </button>
+        {COACH_MODES.map((m) => (
+          <button
+            key={m.id}
+            className={mode === m.id ? "active" : ""}
+            onClick={() => setMode(m.id)}
+          >
+            {m.tab}
+          </button>
+        ))}
       </div>
 
       <div className="coach-form">
@@ -392,17 +407,30 @@ function ProposalCoach() {
           <input
             value={org}
             onChange={(e) => setOrg(e.target.value)}
-            placeholder="target org (e.g. Zulip)"
+            placeholder={
+              mode === "ideas"
+                ? "target org — optional, coach picks if empty"
+                : "target org (e.g. Zulip)"
+            }
           />
         </div>
-        {mode === "outline" ? (
+        {mode === "ideas" && (
+          <input
+            className="coach-wide-input"
+            value={skills}
+            onChange={(e) => setSkills(e.target.value)}
+            placeholder="your languages & skills (e.g. Python, React, a bit of Docker)"
+          />
+        )}
+        {mode === "outline" && (
           <textarea
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
             rows={5}
             placeholder="Paste the project idea from the org's ideas list (or describe what you want to build)…"
           />
-        ) : (
+        )}
+        {mode === "review" && (
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -415,30 +443,111 @@ function ProposalCoach() {
           onClick={run}
           disabled={result.status === "loading"}
         >
-          {result.status === "loading"
-            ? "the coach is reading…"
-            : mode === "outline"
-              ? "✍️ outline my proposal"
-              : "🔍 review my draft"}
+          {result.status === "loading" ? current.loading : current.btn}
         </button>
       </div>
 
       {result.status === "ready" && (
-        <div className="report-text coach-result">
-          {result.text.split("\n").filter(Boolean).map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
+        <div className="coach-result-wrap">
+          <button className="copy-mini" onClick={copyResult}>
+            {copied ? "✓ copied" : "⧉ copy"}
+          </button>
+          <div className="report-text coach-result">
+            <RichText text={result.text} />
+          </div>
         </div>
       )}
       {result.status === "error" && (
         <p className="report-loading">
           {result.reason === "no_key"
             ? "The coach needs a free GEMINI_API_KEY in .env.local to work."
-            : result.reason === "missing_idea" || result.reason === "missing_draft"
-              ? "Paste something for the coach to work with first."
-              : "The coach stumbled — try again in a moment."}
+            : result.reason === "rate_limited"
+              ? "The free tier needs a short breather — try again in a minute."
+              : result.reason?.startsWith("missing")
+                ? "Give the coach something to work with first (skills, an idea, or a draft)."
+                : "The coach stumbled — try again in a moment."}
         </p>
       )}
     </div>
   );
+}
+
+// ---------- lightweight markdown-ish renderer ----------
+// Handles: ## headings, - / * bullets, 1. numbered lists, **bold**.
+
+function RichText({ text }) {
+  const blocks = useMemo(() => parseBlocks(text), [text]);
+  return blocks.map((b, i) => {
+    if (b.type === "h") {
+      return (
+        <h4 key={i} className="rich-h">
+          <Inline text={b.text} />
+        </h4>
+      );
+    }
+    if (b.type === "list") {
+      const Tag = b.ordered ? "ol" : "ul";
+      return (
+        <Tag key={i} className="rich-list">
+          {b.items.map((item, k) => (
+            <li key={k}>
+              <Inline text={item} />
+            </li>
+          ))}
+        </Tag>
+      );
+    }
+    return (
+      <p key={i}>
+        <Inline text={b.text} />
+      </p>
+    );
+  });
+}
+
+function parseBlocks(text) {
+  const blocks = [];
+  let list = null;
+  const flush = () => {
+    if (list) {
+      blocks.push(list);
+      list = null;
+    }
+  };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line) {
+      flush();
+      continue;
+    }
+    const h = line.match(/^#{1,4}\s+(.*)$/);
+    const bullet = line.match(/^[-*•]\s+(.*)$/);
+    const num = line.match(/^\d+[.)]\s+(.*)$/);
+    if (h) {
+      flush();
+      blocks.push({ type: "h", text: h[1] });
+    } else if (bullet) {
+      if (!list || list.ordered) {
+        flush();
+        list = { type: "list", ordered: false, items: [] };
+      }
+      list.items.push(bullet[1]);
+    } else if (num) {
+      if (!list || !list.ordered) {
+        flush();
+        list = { type: "list", ordered: true, items: [] };
+      }
+      list.items.push(num[1]);
+    } else {
+      flush();
+      blocks.push({ type: "p", text: line });
+    }
+  }
+  flush();
+  return blocks;
+}
+
+function Inline({ text }) {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  return parts.map((p, i) => (i % 2 === 1 ? <strong key={i}>{p}</strong> : p));
 }
