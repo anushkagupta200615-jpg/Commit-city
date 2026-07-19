@@ -94,6 +94,15 @@ export default function Landing() {
           ))}
         </div>
 
+        <div className="landing-examples">
+          <Link href="/prepare" className="example-chip">
+            🧭 Mentorship HQ — GSoC · LFX · Outreachy
+          </Link>
+          <Link href="/squad" className="example-chip">
+            🌉 squad street
+          </Link>
+        </div>
+
         {featured.length > 0 && (
           <div className="featured-row">
             {featured.map((f) => (

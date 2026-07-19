@@ -30,8 +30,22 @@ It's a contribution visualizer with a soul: part data-viz, part illustration, pa
 - **AI City Inspector's report** — an optional Claude-written noir walking tour of your skyline
 
 ### 🚀 Break into open source
-- **Program matching** — matches your tech stack to **live GSoC organizations** (from Google's API) and a curated **LFX Mentorship** roster
+- **Program matching** — matches your tech stack to **live GSoC organizations** (from Google's API), plus curated **LFX Mentorship** and **Outreachy** rosters, with competition signals (🔥 competitive vs 🌱 friendlier odds)
 - **Real starter issues** — surfaces open, unassigned `good first issue`s in your top languages, with direct repo + issue links you can try tonight
+- **🌉 Bridges to target orgs** — watchlist the orgs you're aiming for; every merged PR you land there adds a girder to an illustrated bridge (mentors pick applicants who contributed early — this gamifies exactly that)
+- **🎯 Application readiness score** — a 0–100 score across the signals mentors actually check (merged external PRs, recent activity, consistency, profile completeness), each with concrete advice
+
+### 🧭 Mentorship HQ (`/prepare`) — for GSoC / LFX / Outreachy applicants
+- **Season countdowns** with live "OPEN NOW" detection for application windows
+- **📅 Add-to-calendar** — download all program deadlines as an `.ics` file
+- **Eligibility quiz** — four questions → which of the three programs you qualify for (including Outreachy's full-time and underrepresentation criteria)
+- **Program comparison** — GSoC vs LFX vs Outreachy: eligibility, commitment, stipends, cadence, contribution expectations
+- **Stipend table** — what each program actually pays, including GSoC's country tiers
+- **Week-by-week plan** — generated backward from the next application deadline
+- **🎓 AI Proposal Coach** — get a tailored proposal outline from a project idea, or an org-mentor-style review of your draft (Claude-powered)
+
+### 🌉 Squad street (`/squad`)
+- A shared page for up to four friends targeting the same program — everyone's skyline, stats, and merged-PR progress toward a common target org. Accountability, not ranking.
 
 ### Share & embed
 - **Live README embed** — `![city](/api/skyline/<username>)` stays live as your city grows
@@ -172,12 +186,17 @@ app/
 │   ├── layout.js               # OG / social metadata
 │   └── wrapped/page.js         # Year-in-review poster
 ├── versus/[a]/[b]/page.js      # Compare mode
+├── prepare/page.js             # Mentorship HQ (countdowns, quiz, coach)
+├── squad/page.js               # Squad street (group accountability)
 └── api/
     ├── city/[username]/        # City model as JSON
     ├── skyline/[username]/     # Live SVG embed
     ├── og/[username]/          # PNG social preview
     ├── report/[username]/      # AI inspector report
-    └── mentorship/[username]/  # GSoC / LFX + good-first-issue matching
+    ├── mentorship/[username]/  # GSoC / LFX / Outreachy + issue matching
+    ├── bridges/[username]/     # PRs merged into target orgs
+    ├── readiness/[username]/   # Application readiness score
+    └── coach/                  # AI proposal outline & review
 
 components/
 └── CityScene.jsx               # The SVG skyline renderer
@@ -186,6 +205,7 @@ lib/
 ├── github.js                   # GitHub fetching + in-memory cache
 ├── city.js                     # City model + analysis
 ├── citygen.js                  # Deterministic skyline generation
+├── mentorshipData.js           # Program calendars, comparison, plan + .ics
 ├── skylineSvg.js               # Server-side SVG renderer (embeds/OG)
 └── programs.js                 # GSoC/LFX + starter-issue matching
 

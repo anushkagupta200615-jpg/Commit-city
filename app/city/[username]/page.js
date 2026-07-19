@@ -21,6 +21,10 @@ export default function CityPage() {
   const [copied, setCopied] = useState(false);
   const [report, setReport] = useState({ status: "idle" });
   const [mentorship, setMentorship] = useState({ status: "loading" });
+  const [watchlist, setWatchlist] = useState([]);
+  const [bridges, setBridges] = useState({ status: "idle", data: [] });
+  const [orgInput, setOrgInput] = useState("");
+  const [readiness, setReadiness] = useState({ status: "loading" });
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -67,6 +71,75 @@ export default function CityPage() {
       alive = false;
     };
   }, [state.status, username]);
+
+  // Application readiness — loads lazily.
+  useEffect(() => {
+    if (state.status !== "ready") return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/readiness/${encodeURIComponent(username)}`);
+        const json = await res.json();
+        if (!alive) return;
+        setReadiness(res.ok ? { status: "ready", data: json } : { status: "error" });
+      } catch {
+        if (alive) setReadiness({ status: "error" });
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [state.status, username]);
+
+  // Target-org watchlist lives in localStorage, bridges load from it.
+  useEffect(() => {
+    if (state.status !== "ready") return;
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(`cc-watch-${username.toLowerCase()}`) || "[]"
+      );
+      setWatchlist(saved);
+      if (saved.length > 0) loadBridges(saved);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status, username]);
+
+  async function loadBridges(orgs) {
+    setBridges({ status: "loading", data: [] });
+    try {
+      const res = await fetch(
+        `/api/bridges/${encodeURIComponent(username)}?orgs=${orgs.join(",")}`
+      );
+      const json = await res.json();
+      setBridges(
+        res.ok
+          ? { status: "ready", data: json.bridges }
+          : { status: "error", reason: json.error }
+      );
+    } catch {
+      setBridges({ status: "error" });
+    }
+  }
+
+  function saveWatchlist(orgs) {
+    setWatchlist(orgs);
+    try {
+      localStorage.setItem(
+        `cc-watch-${username.toLowerCase()}`,
+        JSON.stringify(orgs)
+      );
+    } catch {}
+    if (orgs.length > 0) loadBridges(orgs);
+    else setBridges({ status: "idle", data: [] });
+  }
+
+  function addOrg(slug) {
+    const clean = slug.trim().replace(/^@/, "").replace(/^github\.com\//, "");
+    if (!/^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})$/.test(clean)) return;
+    if (watchlist.some((o) => o.toLowerCase() === clean.toLowerCase())) return;
+    saveWatchlist([...watchlist, clean].slice(0, 4));
+    setOrgInput("");
+  }
 
   const city = state.data?.city;
 
@@ -436,12 +509,19 @@ export default function CityPage() {
                 {mentorship.data.orgs.map((o) => (
                   <div className="org-card" key={o.name}>
                     <div className="org-head">
-                      <span
-                        className={`program-badge ${o.program.startsWith("GSoC") ? "gsoc" : "lfx"}`}
-                      >
+                      <span className={`program-badge ${badgeClass(o.program)}`}>
                         {o.program}
                       </span>
                       <strong>{o.name}</strong>
+                      {o.competition && (
+                        <span className={`competition-chip ${o.competition}`}>
+                          {o.competition === "high"
+                            ? "🔥 competitive"
+                            : o.competition === "medium"
+                              ? "⚖️ moderate"
+                              : "🌱 friendlier odds"}
+                        </span>
+                      )}
                     </div>
                     {o.matched.length > 0 && (
                       <div className="org-tech">
@@ -503,9 +583,150 @@ export default function CityPage() {
               )}
               <p className="mentorship-note">
                 {mentorship.data.liveGsoc
-                  ? "GSoC organizations from Google's live program listing · LFX picks curated."
-                  : "Program list curated from recent GSoC and LFX Mentorship cohorts — check each program's site for this year's dates."}
+                  ? "GSoC organizations from Google's live program listing · LFX and Outreachy picks curated."
+                  : "Program list curated from recent GSoC, LFX and Outreachy cohorts — check each program's site for this year's dates."}
               </p>
+            </>
+          )}
+          <Link href="/prepare" className="hq-link">
+            🧭 Mentorship HQ — deadlines, eligibility quiz, stipends & proposal coach →
+          </Link>
+        </div>
+
+        <div className="panel">
+          <h3>🌉 Bridges to your target orgs</h3>
+          <p className="sub">
+            Pick the orgs you&apos;re aiming for — every merged PR adds a girder
+            to your bridge. Mentors pick applicants who contributed early.
+          </p>
+
+          <div className="watch-controls">
+            <form
+              className="watch-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                addOrg(orgInput);
+              }}
+            >
+              <input
+                value={orgInput}
+                onChange={(e) => setOrgInput(e.target.value)}
+                placeholder="github org (e.g. zulip)"
+                spellCheck={false}
+              />
+              <button type="submit">+ watch</button>
+            </form>
+            {mentorship.status === "ready" && watchlist.length < 4 && (
+              <div className="quick-add">
+                {quickAddSlugs(mentorship.data.orgs, watchlist).map((slug) => (
+                  <button key={slug} className="tech-chip clickable" onClick={() => addOrg(slug)}>
+                    + {slug}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {watchlist.length === 0 && (
+            <p className="report-loading">
+              No target orgs yet — add one above, or tap a suggestion from your
+              matched programs.
+            </p>
+          )}
+
+          {bridges.status === "loading" && (
+            <p className="report-loading">Surveying the river…</p>
+          )}
+          {bridges.status === "error" && (
+            <p className="report-loading">
+              {bridges.reason === "rate_limited"
+                ? "GitHub is rate-limiting the survey crew — try again in a minute."
+                : "Couldn't survey the bridges just now."}
+            </p>
+          )}
+          {bridges.status === "ready" && (
+            <div className="bridge-list">
+              {bridges.data.map((b) => (
+                <div className="bridge-card" key={b.org}>
+                  <div className="bridge-head">
+                    <a href={b.orgUrl} target="_blank" rel="noreferrer">
+                      <strong>{user.login}</strong> → <strong>{b.org}</strong>
+                    </a>
+                    <button
+                      className="bridge-remove"
+                      onClick={() =>
+                        saveWatchlist(watchlist.filter((o) => o !== b.org))
+                      }
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <BridgeGraphic merged={b.merged} open={b.open} />
+                  <div className="bridge-stats">
+                    <span>
+                      <strong>{b.merged}</strong> merged girder{b.merged === 1 ? "" : "s"}
+                    </span>
+                    <span>
+                      <strong>{b.open}</strong> in review
+                    </span>
+                    <a href={b.issuesUrl} target="_blank" rel="noreferrer">
+                      find an issue →
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="panel">
+          <h3>🎯 Application readiness</h3>
+          <p className="sub">
+            The signals GSoC / LFX / Outreachy mentors actually look at.
+          </p>
+          {readiness.status === "loading" && (
+            <p className="report-loading">Scoring the application…</p>
+          )}
+          {readiness.status === "error" && (
+            <p className="report-loading">
+              Couldn&apos;t compute the score just now — likely a GitHub rate
+              limit. Try again shortly.
+            </p>
+          )}
+          {readiness.status === "ready" && (
+            <>
+              <div className="readiness-head">
+                <div className="readiness-score">
+                  <span>{readiness.data.score}</span>/100
+                </div>
+                <p className="readiness-verdict">{readiness.data.verdict}</p>
+              </div>
+              <div className="bar readiness-bar">
+                <div style={{ width: `${readiness.data.score}%` }} />
+              </div>
+              <ul className="readiness-list">
+                {readiness.data.checks.map((c) => (
+                  <li key={c.label} className={c.state}>
+                    <span className="readiness-icon">
+                      {c.state === "done" ? "✅" : c.state === "partial" ? "◐" : "◻"}
+                    </span>
+                    <div>
+                      <strong>
+                        {c.label} · {c.earned}/{c.points}
+                      </strong>
+                      {c.state !== "done" && <p>{c.advice}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {readiness.data.topOrgs.length > 0 && (
+                <p className="mentorship-note">
+                  Bridges already standing:{" "}
+                  {readiness.data.topOrgs
+                    .map((o) => `${o.org} (${o.count})`)
+                    .join(" · ")}
+                </p>
+              )}
             </>
           )}
         </div>
@@ -607,6 +828,70 @@ function EmbedSnippet({ login }) {
         {copied ? "✓" : "copy"}
       </button>
     </div>
+  );
+}
+
+function badgeClass(program) {
+  if (program.includes("Outreachy")) return "outreachy";
+  if (program.startsWith("GSoC")) return "gsoc";
+  return "lfx";
+}
+
+// Suggest github org slugs from matched program orgs' repo URLs.
+function quickAddSlugs(orgs, watchlist) {
+  const watched = new Set(watchlist.map((w) => w.toLowerCase()));
+  const slugs = [];
+  for (const o of orgs) {
+    const m = /github\.com\/([a-zA-Z0-9-]+)/.exec(o.repo || "");
+    if (!m) continue;
+    const slug = m[1];
+    if (watched.has(slug.toLowerCase())) continue;
+    if (slugs.some((s) => s.toLowerCase() === slug.toLowerCase())) continue;
+    slugs.push(slug);
+    if (slugs.length >= 4) break;
+  }
+  return slugs;
+}
+
+// A little suspension bridge: merged PRs are solid gold girders,
+// PRs in review are dashed, the rest of the deck is unbuilt.
+function BridgeGraphic({ merged, open }) {
+  const SEGMENTS = 8;
+  const solid = Math.min(SEGMENTS, merged);
+  const dashed = Math.min(SEGMENTS - solid, open);
+  const segW = 300 / SEGMENTS;
+  return (
+    <svg viewBox="0 0 340 80" className="bridge-svg" aria-hidden="true">
+      {/* pylons */}
+      <rect x="14" y="10" width="6" height="58" rx="2" fill="#3a4a7a" />
+      <rect x="320" y="10" width="6" height="58" rx="2" fill="#3a4a7a" />
+      {/* suspension cables */}
+      <path d="M 17 14 Q 170 66 323 14" fill="none" stroke="#3a4a7a" strokeWidth="2" />
+      {/* deck */}
+      {Array.from({ length: SEGMENTS }).map((_, i) => {
+        const x = 20 + i * segW;
+        const kind = i < solid ? "solid" : i < solid + dashed ? "dashed" : "none";
+        return (
+          <line
+            key={i}
+            x1={x + 2}
+            y1="56"
+            x2={x + segW - 2}
+            y2="56"
+            stroke={kind === "solid" ? "#f6c453" : kind === "dashed" ? "#4da3ff" : "#1d2a52"}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={kind === "dashed" ? "6 5" : undefined}
+            opacity={kind === "none" ? 0.5 : 1}
+          />
+        );
+      })}
+      {merged > SEGMENTS && (
+        <text x="330" y="60" textAnchor="end" fontSize="11" fill="#9aa7c7" fontFamily="inherit">
+          +{merged - SEGMENTS}
+        </text>
+      )}
+    </svg>
   );
 }
 
