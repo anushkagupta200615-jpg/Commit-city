@@ -1,8 +1,11 @@
+import { geminiGenerate, hasGeminiKey } from "../../../lib/gemini";
+
 // AI Proposal Coach — outlines a proposal from a project idea, or
 // reviews a draft the way an experienced org mentor would.
+// Powered by Google Gemini (free tier).
 
 export async function POST(request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!hasGeminiKey()) {
     return Response.json({ error: "no_key" }, { status: 501 });
   }
 
@@ -32,27 +35,18 @@ export async function POST(request) {
 
 Key things strong proposals have: a crisp synopsis; concrete, testable deliverables; a week-by-week timeline with buffer weeks; evidence of prior contact with the org (merged PRs, chat discussions); honest scoping; an "about me" tied to the project's needs. Common failure modes: vague timelines ("weeks 1-4: coding"), copy-pasted idea text, over-promising, no mention of community-bonding, ignoring the org's proposal template.`;
 
-  const userContent =
+  const user =
     mode === "outline"
       ? `Program: ${program}\nTarget organization: ${org || "not specified"}\n\nProject idea the student wants to apply for:\n${idea}\n\nProduce a proposal OUTLINE for this student: the exact section structure they should write, with 2-3 bullet-style guidance sentences per section tailored to this specific idea, plus a realistic 12-week timeline skeleton they can adapt. End with the top 3 things they should do BEFORE submitting.`
       : `Program: ${program}\nTarget organization: ${org || "not specified"}\n\nThe student's draft proposal:\n${draft}\n\nReview this draft as an org mentor would. Give: (1) an overall impression in 2 sentences, (2) the 3-5 most important specific improvements, quoting or referencing the relevant part of the draft for each, (3) anything missing that programs expect, (4) one thing they did well. Be concrete — rewrite one weak sentence as an example.`;
 
   try {
-    const { default: Anthropic } = await import("@anthropic-ai/sdk");
-    const client = new Anthropic();
-
-    const response = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 2048,
-      thinking: { type: "adaptive" },
-      system,
-      messages: [{ role: "user", content: userContent }],
-    });
-
-    const text = response.content.find((b) => b.type === "text")?.text;
-    if (!text) return Response.json({ error: "unexpected" }, { status: 500 });
+    const text = await geminiGenerate({ system, user, maxTokens: 2048 });
     return Response.json({ text });
-  } catch {
+  } catch (err) {
+    if (err.message === "rate_limited") {
+      return Response.json({ error: "rate_limited" }, { status: 429 });
+    }
     return Response.json({ error: "unexpected" }, { status: 500 });
   }
 }

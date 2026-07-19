@@ -27,7 +27,7 @@ It's a contribution visualizer with a soul: part data-viz, part illustration, pa
 - **City rhythm** — narrative insights ("Fridays are when this city works hardest…")
 - **City records** — longest streak, busiest day, momentum, and more
 - **Growth chart** — contributions per year across your whole GitHub life
-- **AI City Inspector's report** — an optional Claude-written noir walking tour of your skyline
+- **AI City Inspector's report** — an optional AI-written noir walking tour of your skyline
 
 ### 🌍 Your open-source footprint
 - **In the wild** — your contributions *outside* your own repos: PRs merged elsewhere, **PR acceptance rate**, PRs you've reviewed, issues filed, and the total stars of repos you've improved
@@ -49,7 +49,7 @@ It's a contribution visualizer with a soul: part data-viz, part illustration, pa
 - **Program comparison** — GSoC vs LFX vs Outreachy: eligibility, commitment, stipends, cadence, contribution expectations
 - **Stipend table** — what each program actually pays, including GSoC's country tiers
 - **Week-by-week plan** — generated backward from the next application deadline
-- **🎓 AI Proposal Coach** — get a tailored proposal outline from a project idea, or an org-mentor-style review of your draft (Claude-powered)
+- **🎓 AI Proposal Coach** — get a tailored proposal outline from a project idea, or an org-mentor-style review of your draft (Gemini-powered)
 
 ### 🌉 Squad street (`/squad`)
 - A shared page for up to four friends targeting the same program — everyone's skyline, stats, and merged-PR progress toward a common target org. Accountability, not ranking.
@@ -95,7 +95,7 @@ flowchart TD
         GHApi["GitHub REST API"]
         Contrib["Contributions API<br/>(jogruber.de)"]
         GSoC["Google GSoC API"]
-        Claude["Claude API<br/>(Anthropic SDK)"]
+        Claude["Gemini API<br/>(free tier)"]
     end
 
     Landing --> Scene
@@ -141,7 +141,7 @@ flowchart TD
 | **UI** | [React 19](https://react.dev/), plain CSS (no framework), Google Fonts (Outfit) |
 | **Graphics** | Hand-authored **SVG** — rendered client-side (React) and server-side (string builder) |
 | **Social images** | `next/og` (`ImageResponse`) for PNG preview cards |
-| **AI** | [Claude API](https://www.anthropic.com/) via `@anthropic-ai/sdk` (`claude-opus-4-8`) |
+| **AI** | [Google Gemini API](https://ai.google.dev/) free tier (`gemini-2.0-flash`, via REST) |
 | **Data sources** | GitHub REST API · public contributions API · Google GSoC API |
 | **Caching** | In-memory TTL cache (1 hr per user, 24 hr for program lists) |
 | **PWA** | Web manifest + SVG favicon |
@@ -172,9 +172,10 @@ Create a `.env.local` file:
 # A classic token with NO scopes is enough for public data.
 GITHUB_TOKEN=ghp_xxx
 
-# Enables the AI "City Inspector's report". Without it, the app
-# works fully — that one panel just shows an "off duty" note.
-ANTHROPIC_API_KEY=sk-ant-xxx
+# Enables the AI "City Inspector's report" + Proposal Coach (FREE tier).
+# Get one at https://aistudio.google.com/apikey — without it, the app
+# works fully; those AI panels just show an "off duty" note.
+GEMINI_API_KEY=xxx
 ```
 
 > **Tip:** the mentorship feature uses GitHub's issue-search API, which has the tightest rate limit. Adding `GITHUB_TOKEN` is the single most useful thing you can do for a smooth experience.
@@ -251,4 +252,4 @@ public/
 
 ---
 
-*Built with Next.js and the Claude API. Every project raises a tower — stars raise it higher.*
+*Built with Next.js and the Gemini API. Every project raises a tower — stars raise it higher.*

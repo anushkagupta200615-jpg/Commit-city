@@ -1042,7 +1042,7 @@ export default function CityPage() {
           {report.status === "unavailable" && (
             <p className="report-loading">
               {report.reason === "no_key"
-                ? "The inspector is off duty — add an ANTHROPIC_API_KEY to .env.local to hire them."
+                ? "The inspector is off duty — add a free GEMINI_API_KEY to .env.local to hire them."
                 : "The inspector couldn't finish the rounds. Try again in a moment."}
             </p>
           )}

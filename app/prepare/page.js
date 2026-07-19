@@ -433,7 +433,7 @@ function ProposalCoach() {
       {result.status === "error" && (
         <p className="report-loading">
           {result.reason === "no_key"
-            ? "The coach needs an ANTHROPIC_API_KEY in .env.local to work."
+            ? "The coach needs a free GEMINI_API_KEY in .env.local to work."
             : result.reason === "missing_idea" || result.reason === "missing_draft"
               ? "Paste something for the coach to work with first."
               : "The coach stumbled — try again in a moment."}
