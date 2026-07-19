@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import CityScene from "../../../components/CityScene";
+import RichText from "../../../components/RichText";
 
 const ERRORS = {
   not_found: "No city found under that GitHub username — maybe a small typo?",
@@ -27,6 +28,8 @@ export default function CityPage() {
   const [readiness, setReadiness] = useState({ status: "loading" });
   const [wild, setWild] = useState({ status: "idle" });
   const [host, setHost] = useState({ status: "idle" });
+  const [bulletin, setBulletin] = useState(null);
+  const [kick, setKick] = useState({});
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -92,6 +95,73 @@ export default function CityPage() {
       alive = false;
     };
   }, [state.status, username]);
+
+  // "Since you last visited" — compare against the snapshot saved on the
+  // previous visit (localStorage). Only diffs older than an hour count,
+  // so refreshes don't reset the baseline.
+  useEffect(() => {
+    if (state.status !== "ready") return;
+    const key = `cc-visit-${username.toLowerCase()}`;
+    try {
+      const c = state.data.city;
+      const snap = {
+        at: Date.now(),
+        towers: c.towerCount,
+        contributions: c.totalContributions,
+        stars: c.analysis.totalStars,
+        streak: c.currentStreak,
+      };
+      const prev = JSON.parse(localStorage.getItem(key) || "null");
+      if (!prev) {
+        localStorage.setItem(key, JSON.stringify(snap));
+        return;
+      }
+      if (Date.now() - prev.at < 60 * 60 * 1000) return;
+      const diff = {
+        since: prev.at,
+        towers: snap.towers - prev.towers,
+        contributions: snap.contributions - prev.contributions,
+        stars: snap.stars - prev.stars,
+        streakFrom: prev.streak,
+        streakTo: snap.streak,
+      };
+      if (
+        diff.towers !== 0 ||
+        diff.contributions !== 0 ||
+        diff.stars !== 0 ||
+        diff.streakFrom !== diff.streakTo
+      ) {
+        setBulletin(diff);
+      }
+      localStorage.setItem(key, JSON.stringify(snap));
+    } catch {}
+  }, [state.status, username, state.data]);
+
+  // "Help me start" — per-issue beginner attack plan from Gemini.
+  async function kickstart(issue) {
+    setKick((k) => ({ ...k, [issue.url]: { status: "loading" } }));
+    try {
+      const res = await fetch("/api/kickstart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: issue.title,
+          repo: issue.repo,
+          language: issue.language,
+          url: issue.url,
+        }),
+      });
+      const json = await res.json();
+      setKick((k) => ({
+        ...k,
+        [issue.url]: res.ok
+          ? { status: "ready", text: json.text }
+          : { status: "error", reason: json.error },
+      }));
+    } catch {
+      setKick((k) => ({ ...k, [issue.url]: { status: "error" } }));
+    }
+  }
 
   // External footprint + maintainer health are the most API-heavy panels,
   // so they load on demand (a click) rather than on every page view.
@@ -351,6 +421,55 @@ export default function CityPage() {
       )}
 
       <div className="city-content">
+        {bulletin && (
+          <div className="panel bulletin-panel">
+            <h3>🗞️ While you were away</h3>
+            <p className="sub">
+              The city kept building since{" "}
+              {new Date(bulletin.since).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+              .
+            </p>
+            <div className="bulletin-row">
+              {bulletin.towers > 0 && (
+                <span className="bulletin-chip">
+                  🏗️ +{bulletin.towers} tower{bulletin.towers === 1 ? "" : "s"}
+                </span>
+              )}
+              {bulletin.contributions > 0 && (
+                <span className="bulletin-chip">
+                  🧱 +{bulletin.contributions.toLocaleString()} contributions
+                </span>
+              )}
+              {bulletin.stars > 0 && (
+                <span className="bulletin-chip">
+                  ⭐ +{bulletin.stars.toLocaleString()} stars
+                </span>
+              )}
+              {bulletin.streakTo > bulletin.streakFrom && (
+                <span className="bulletin-chip">
+                  🔥 streak {bulletin.streakFrom} → {bulletin.streakTo}
+                </span>
+              )}
+              {bulletin.streakTo < bulletin.streakFrom && (
+                <span className="bulletin-chip quiet">
+                  🌙 the streak rested — fresh start tonight
+                </span>
+              )}
+              {bulletin.towers === 0 &&
+                bulletin.contributions === 0 &&
+                bulletin.stars === 0 &&
+                bulletin.streakTo === bulletin.streakFrom && (
+                  <span className="bulletin-chip quiet">
+                    a quiet stretch — the city is exactly as you left it
+                  </span>
+                )}
+            </div>
+          </div>
+        )}
+
         {city.towerCount === 0 && (
           <div className="panel">
             <h3>An empty lot, full of promise</h3>
@@ -809,7 +928,7 @@ export default function CityPage() {
                     {mentorship.data.issues.map((it) => (
                       <li key={it.url}>
                         <span className="tech-chip">{it.language}</span>
-                        <div>
+                        <div className="issue-body">
                           <a href={it.url} target="_blank" rel="noreferrer">
                             {it.title}
                           </a>
@@ -821,6 +940,35 @@ export default function CityPage() {
                             </a>{" "}
                             · {it.comments} comments
                           </span>
+                          <div className="kickstart-row">
+                            {!kick[it.url] && (
+                              <button
+                                className="kickstart-btn"
+                                onClick={() => kickstart(it)}
+                              >
+                                🚀 help me start
+                              </button>
+                            )}
+                            {kick[it.url]?.status === "loading" && (
+                              <span className="report-loading">
+                                drawing up your plan of attack…
+                              </span>
+                            )}
+                            {kick[it.url]?.status === "error" && (
+                              <span className="report-loading">
+                                {kick[it.url].reason === "no_key"
+                                  ? "needs a free GEMINI_API_KEY to work"
+                                  : kick[it.url].reason === "rate_limited"
+                                    ? "the guide needs a breather — try again in a minute"
+                                    : "couldn't draw the plan — try again"}
+                              </span>
+                            )}
+                          </div>
+                          {kick[it.url]?.status === "ready" && (
+                            <div className="coach-result kickstart-result">
+                              <RichText text={kick[it.url].text} />
+                            </div>
+                          )}
                         </div>
                       </li>
                     ))}

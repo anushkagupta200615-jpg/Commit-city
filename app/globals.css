@@ -1073,6 +1073,72 @@ body {
   line-height: 1.4;
 }
 
+/* bulletin — since you last visited */
+.bulletin-panel {
+  border-color: rgba(246, 196, 83, 0.4);
+  background: linear-gradient(180deg, rgba(246, 196, 83, 0.07), var(--panel));
+}
+
+.bulletin-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bulletin-chip {
+  background: rgba(246, 196, 83, 0.12);
+  border: 1px solid rgba(246, 196, 83, 0.35);
+  color: var(--gold);
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+}
+
+.bulletin-chip.quiet {
+  background: rgba(148, 173, 255, 0.08);
+  border-color: var(--panel-border);
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+/* kickstart — help me start an issue */
+.issue-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kickstart-row {
+  margin-top: 8px;
+}
+
+.kickstart-btn {
+  border: 1px solid rgba(246, 196, 83, 0.4);
+  background: rgba(246, 196, 83, 0.1);
+  color: var(--gold);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.kickstart-btn:hover {
+  background: rgba(246, 196, 83, 0.2);
+}
+
+.kickstart-result {
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.kickstart-row .report-loading {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 /* licenses */
 .license-warning {
   margin-top: 16px;
